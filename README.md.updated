@@ -1,0 +1,25 @@
+# SHARA Client
+
+SHARA Client — client-side Fabric mod scaffold for Minecraft 1.21.4.
+
+This repository contains an in-development client mod with a modular architecture, ClickGUI, HUD system and theme/font/animation managers. The project is work-in-progress and is being implemented in stages; each stage is committed to the repository.
+
+Quick start
+1. Install JDK 21 (recommended) or JDK 17.
+2. Clone:
+   git clone https://github.com/bore1c/shara-client.git
+3. Build:
+   ./gradlew build
+4. Run dev client (Loom):
+   ./gradlew runClient
+
+Development notes
+- The mod uses Fabric Loader and Fabric API for Minecraft 1.21.4. Check build.gradle.kts for versions.
+- Configs are saved under `config/shara-client/`.
+- Profiles are stored under `config/shara-client/profiles/`.
+
+Security & policy
+- This project intentionally avoids implementing any automated PvP features, anti-cheat bypasses, or server-exploiting behaviors. Visual modules use only client-visible data.
+
+License
+MIT — see LICENSE file.
