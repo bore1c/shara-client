@@ -5,71 +5,40 @@ import dev.shara.client.SharaClient;
 public class ClientCommandManager {
     private final java.util.List<Command> commands = new java.util.ArrayList<>();
 
-    public void register(Command command) {
-        commands.add(command);
-    }
+    public void register(Command command) { commands.add(command); }
 
     public void registerHelp() {
-        register(new Command("help") {
-            @Override
-            public void execute(String[] args) {
-                SharaClient.LOGGER.info("Available commands: .help, .modules, .toggle <module>, .bind <module> <key>, .unbind <module>, .theme <name>");
-            }
-        });
+        register(new Command("help") { public void execute(String[] args) { SharaClient.LOGGER.info("Available commands: .help, .modules, .toggle <module>, .bind <module> <key>, .unbind <module>, .theme <name>, .profile save/load/list/reset, .config save/reload"); } });
     }
 
     public void execute(String input) {
         if (input == null || input.isBlank()) return;
         String[] split = input.trim().split("\\s+");
-        String commandName = split[0];
+        String cmd = split[0].startsWith(".") ? split[0].substring(1) : split[0];
         String[] args = java.util.Arrays.copyOfRange(split, 1, split.length);
-
         try {
-            if (commandName.equalsIgnoreCase(".help") || commandName.equalsIgnoreCase("help")) {
-                for (Command c : commands) SharaClient.LOGGER.info(c.getName());
-                return;
-            }
-
-            if (commandName.equalsIgnoreCase(".modules") || commandName.equalsIgnoreCase("modules")) {
-                SharaClient.get().getModuleManager().getModules().forEach(m -> SharaClient.LOGGER.info(m.getId() + " - " + m.getName() + " [" + (m.isEnabled() ? "ENABLED" : "disabled") + "]"));
-                return;
-            }
-
-            if (commandName.equalsIgnoreCase(".toggle") && args.length > 0) {
-                SharaClient.get().getModuleManager().toggleModule(args[0]);
-                return;
-            }
-
-            if (commandName.equalsIgnoreCase(".theme") && args.length > 0) {
-                SharaClient.get().getThemeManager().setActiveTheme(args[0]);
-                try { SharaClient.get().getConfigManager().save(); } catch (Exception ignored) {}
-                SharaClient.LOGGER.info("Theme set to " + args[0]);
-                return;
-            }
-
-            if (commandName.equalsIgnoreCase(".bind") && args.length >= 2) {
-                String module = args[0]; String key = args[1];
-                // placeholder: would register keybind later
-                SharaClient.LOGGER.info("Binding " + module + " to " + key);
-                return;
-            }
-
-            if (commandName.equalsIgnoreCase(".unbind") && args.length >= 1) {
-                String module = args[0];
-                SharaClient.LOGGER.info("Unbound " + module);
-                return;
-            }
-
-            if (commandName.equalsIgnoreCase(".config") && args.length >= 1) {
-                if (args[0].equalsIgnoreCase("save")) {
-                    SharaClient.get().getConfigManager().save();
-                    SharaClient.LOGGER.info("Config saved.");
+            switch (cmd.toLowerCase()) {
+                case "help" -> { for (Command c : commands) SharaClient.LOGGER.info(c.getName()); }
+                case "modules" -> SharaClient.get().getModuleManager().getModules().forEach(m -> SharaClient.LOGGER.info(m.getId() + " - " + m.getName() + " [" + (m.isEnabled() ? "ENABLED" : "disabled") + "]"));
+                case "toggle" -> { if (args.length>0) SharaClient.get().getModuleManager().toggleModule(args[0]); }
+                case "theme" -> { if (args.length>0) { SharaClient.get().getThemeManager().setActiveTheme(args[0]); SharaClient.LOGGER.info("Theme set to " + args[0]); } }
+                case "bind" -> { if (args.length>=2) { String module = args[0]; String key = args[1]; SharaClient.LOGGER.info("Bind placeholder: " + module + "->" + key); } }
+                case "unbind" -> { if (args.length>=1) { String module = args[0]; SharaClient.LOGGER.info("Unbind placeholder: " + module); } }
+                case "profile" -> {
+                    if (args.length==0) { SharaClient.LOGGER.info("profile save/load/list/reset <name>"); break; }
+                    switch (args[0].toLowerCase()) {
+                        case "save" -> { if (args.length>=2) { boolean ok = SharaClient.get().getProfileManager().saveProfile(args[1]); SharaClient.LOGGER.info(ok?"Profile saved":"Profile save failed"); } }
+                        case "load" -> { if (args.length>=2) { boolean ok = SharaClient.get().getProfileManager().loadProfile(args[1]); SharaClient.LOGGER.info(ok?"Profile loaded":"Profile load failed"); } }
+                        case "list" -> { SharaClient.get().getProfileManager().listProfiles().forEach(p->SharaClient.LOGGER.info(p)); }
+                        case "delete", "reset" -> { if (args.length>=2) { boolean ok = SharaClient.get().getProfileManager().deleteProfile(args[1]); SharaClient.LOGGER.info(ok?"Profile deleted":"Profile delete failed"); } }
+                    }
                 }
-                return;
+                case "config" -> { if (args.length>0) { switch (args[0].toLowerCase()) { case "save" -> { SharaClient.get().getConfigManager().save(); SharaClient.LOGGER.info("Config saved"); } case "reload" -> { SharaClient.get().getConfigManager().load(); SharaClient.LOGGER.info("Config reloaded"); } } } }
+                case "gui" -> { SharaClient.get().getModuleManager().getModules(); /* placeholder, GUI command registered elsewhere */ }
+                default -> SharaClient.LOGGER.info("Unknown command: " + cmd);
             }
-
-        } catch (Exception e) {
-            SharaClient.LOGGER.warn("Command execution error", e);
-        }
+        } catch (Exception e) { SharaClient.LOGGER.warn("Command error", e); }
     }
+
+    public java.util.List<Command> getRegistered() { return commands; }
 }
