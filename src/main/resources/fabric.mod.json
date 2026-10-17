@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "shara-client",
+  "version": "0.1.0",
+  "name": "SHARA Client",
+  "description": "SHARA Client – Fabric client mod scaffold for Minecraft 1.21.4.",
+  "authors": ["shara-dev"],
+  "contact": {
+    "homepage": "https://github.com/bore1c/shara-client",
+    "sources": "https://github.com/bore1c/shara-client"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.shara.client.SharaClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.9",
+    "fabric": "*",
+    "minecraft": "1.21.4"
+  }
+}
