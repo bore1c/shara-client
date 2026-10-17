@@ -1,0 +1,77 @@
+package dev.shara.client.core;
+
+import com.google.gson.JsonObject;
+import dev.shara.client.SharaClient;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class ConfigManager {
+    private final Path configDir;
+    private final Path configFile;
+
+    public ConfigManager() {
+        this.configDir = Path.of("config", SharaClient.MOD_ID);
+        this.configFile = configDir.resolve("config.json");
+    }
+
+    public void load() throws IOException {
+        if (!Files.exists(configFile)) {
+            save(new ConfigData());
+            return;
+        }
+
+        String content = Files.readString(configFile);
+        if (content == null || content.isBlank()) {
+            save(new ConfigData());
+            return;
+        }
+
+        JsonObject root = SharaClient.GSON.fromJson(content, JsonObject.class);
+        var cfg = ConfigData.fromJson(root);
+
+        // apply modules
+        for (var e : cfg.modules.entrySet()) {
+            String id = e.getKey();
+            boolean enabled = e.getValue().enabled;
+            SharaClient.get().getModuleManager().getModuleById(id).ifPresent(m -> {
+                if (enabled) m.enable(); else m.disable();
+            });
+        }
+
+        // apply hud positions
+        cfg.applyTo(SharaClient.get().getHudManager());
+
+        // theme
+        SharaClient.get().getThemeManager().setActiveTheme(cfg.activeTheme);
+    }
+
+    public void save() throws IOException {
+        Files.createDirectories(configDir);
+        ConfigData cfg = new ConfigData();
+        // write modules
+        for (var m : SharaClient.get().getModuleManager().getModules()) {
+            ConfigData.ModuleState s = new ConfigData.ModuleState();
+            s.enabled = m.isEnabled();
+            cfg.modules.put(m.getId(), s);
+        }
+        // write hud
+        for (var he : SharaClient.get().getHudManager().getElements()) {
+            ConfigData.HudPosition p = new ConfigData.HudPosition();
+            p.x = he.getX(); p.y = he.getY();
+            cfg.hudPositions.put(he.getId(), p);
+        }
+        cfg.activeTheme = SharaClient.get().getThemeManager().getActiveTheme().getId();
+
+        Files.writeString(configFile, SharaClient.GSON.toJson(cfg.toJson()));
+    }
+
+    // save backup helper
+    public void saveBackup() throws IOException {
+        Files.createDirectories(configDir);
+        Path backup = configDir.resolve("config.backup.json");
+        if (Files.exists(configFile)) Files.copy(configFile, backup);
+        save();
+    }
+}

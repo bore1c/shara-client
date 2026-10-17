@@ -1,0 +1,16 @@
+package dev.shara.client.diagnostics;
+
+import dev.shara.client.SharaClient;
+
+public class DeveloperDiagnostics {
+    public static String getSummary() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SHARA Client diagnostics\n");
+        sb.append("FPS: ").append(String.format("%.2f", SharaClient.get().getPerformanceMonitor().getFps())).append("\n");
+        sb.append("Modules: ").append(SharaClient.get().getModuleManager().getModules().size()).append("\n");
+        sb.append("HUD elements: ").append(SharaClient.get().getHudManager().getElements().size()).append("\n");
+        sb.append("Particles: ").append(SharaClient.get().getParticleManager().getParticleCount()).append("/" ).append(SharaClient.get().getParticleManager().getMaxParticles()).append("\n");
+        sb.append("Active theme: ").append(SharaClient.get().getThemeManager().getActiveTheme().getId()).append("\n");
+        return sb.toString();
+    }
+}

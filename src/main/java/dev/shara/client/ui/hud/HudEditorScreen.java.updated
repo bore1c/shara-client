@@ -1,0 +1,66 @@
+package dev.shara.client.ui.hud;
+
+import dev.shara.client.SharaClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.text.Text;
+
+public class HudEditorScreen extends Screen {
+    private HudElement dragging = null;
+    private int dragOffsetX = 0;
+    private int dragOffsetY = 0;
+
+    public HudEditorScreen() {
+        super(Text.literal("HUD Editor"));
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        context.fill(0, 0, width, height, 0x88090B12);
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal("HUD Editor - drag elements"), width / 2, 20, 0xFFFFFFFF);
+
+        // render HUD elements as outlines with names
+        for (HudElement he : SharaClient.get().getHudManager().getElements()) {
+            int x = he.getX();
+            int y = he.getY();
+            context.fill(x - 2, y - 2, x + 80, y + 14, 0x44000000);
+            context.drawText(textRenderer, Text.literal(he.getId()), x, y, 0xFFFFFFFF, false);
+        }
+
+        super.render(context, mouseX, mouseY, delta);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        for (HudElement he : SharaClient.get().getHudManager().getElements()) {
+            int x = he.getX(); int y = he.getY();
+            if (mouseX >= x && mouseX <= x + 80 && mouseY >= y && mouseY <= y + 14) {
+                dragging = he;
+                dragOffsetX = (int)mouseX - x;
+                dragOffsetY = (int)mouseY - y;
+                return true;
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (dragging != null) {
+            dragging.setX((int)mouseX - dragOffsetX);
+            dragging.setY((int)mouseY - dragOffsetY);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (dragging != null) {
+            dragging = null;
+            try { SharaClient.get().getConfigManager().save(); } catch (Exception ignored) {}
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+}

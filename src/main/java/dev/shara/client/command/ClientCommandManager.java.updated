@@ -1,0 +1,75 @@
+package dev.shara.client.command;
+
+import dev.shara.client.SharaClient;
+
+public class ClientCommandManager {
+    private final java.util.List<Command> commands = new java.util.ArrayList<>();
+
+    public void register(Command command) {
+        commands.add(command);
+    }
+
+    public void registerHelp() {
+        register(new Command("help") {
+            @Override
+            public void execute(String[] args) {
+                SharaClient.LOGGER.info("Available commands: .help, .modules, .toggle <module>, .bind <module> <key>, .unbind <module>, .theme <name>");
+            }
+        });
+    }
+
+    public void execute(String input) {
+        if (input == null || input.isBlank()) return;
+        String[] split = input.trim().split("\\s+");
+        String commandName = split[0];
+        String[] args = java.util.Arrays.copyOfRange(split, 1, split.length);
+
+        try {
+            if (commandName.equalsIgnoreCase(".help") || commandName.equalsIgnoreCase("help")) {
+                for (Command c : commands) SharaClient.LOGGER.info(c.getName());
+                return;
+            }
+
+            if (commandName.equalsIgnoreCase(".modules") || commandName.equalsIgnoreCase("modules")) {
+                SharaClient.get().getModuleManager().getModules().forEach(m -> SharaClient.LOGGER.info(m.getId() + " - " + m.getName() + " [" + (m.isEnabled() ? "ENABLED" : "disabled") + "]"));
+                return;
+            }
+
+            if (commandName.equalsIgnoreCase(".toggle") && args.length > 0) {
+                SharaClient.get().getModuleManager().toggleModule(args[0]);
+                return;
+            }
+
+            if (commandName.equalsIgnoreCase(".theme") && args.length > 0) {
+                SharaClient.get().getThemeManager().setActiveTheme(args[0]);
+                try { SharaClient.get().getConfigManager().save(); } catch (Exception ignored) {}
+                SharaClient.LOGGER.info("Theme set to " + args[0]);
+                return;
+            }
+
+            if (commandName.equalsIgnoreCase(".bind") && args.length >= 2) {
+                String module = args[0]; String key = args[1];
+                // placeholder: would register keybind later
+                SharaClient.LOGGER.info("Binding " + module + " to " + key);
+                return;
+            }
+
+            if (commandName.equalsIgnoreCase(".unbind") && args.length >= 1) {
+                String module = args[0];
+                SharaClient.LOGGER.info("Unbound " + module);
+                return;
+            }
+
+            if (commandName.equalsIgnoreCase(".config") && args.length >= 1) {
+                if (args[0].equalsIgnoreCase("save")) {
+                    SharaClient.get().getConfigManager().save();
+                    SharaClient.LOGGER.info("Config saved.");
+                }
+                return;
+            }
+
+        } catch (Exception e) {
+            SharaClient.LOGGER.warn("Command execution error", e);
+        }
+    }
+}
