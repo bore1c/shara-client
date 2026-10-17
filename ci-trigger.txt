@@ -1,0 +1,3 @@
+Trigger file to cause GitHub Actions to run and build the JAR.
+
+This file is automatically created to ensure the "Build and upload JAR" workflow runs.
