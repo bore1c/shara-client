@@ -1,0 +1,34 @@
+package dev.shara.client.core;
+
+import dev.shara.client.render.particle.ParticlePool;
+import dev.shara.client.render.particle.ParticleRenderer;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.util.math.MatrixStack;
+
+public class ParticleManager {
+    private final ParticlePool pool;
+    private final ParticleRenderer renderer;
+
+    public ParticleManager() {
+        this.pool = new ParticlePool(500);
+        this.renderer = new ParticleRenderer(pool);
+    }
+
+    public void tick(double delta) {
+        pool.tick(delta);
+    }
+
+    public void render(MatrixStack matrices, float tickDelta) {
+        renderer.render(matrices, tickDelta);
+    }
+
+    public void spawnParticle(double x, double y, double z, double vx, double vy, double vz, int color, float size, int life) {
+        pool.spawn(new dev.shara.client.render.particle.Particle(x, y, z, vx, vy, vz, color, size, life));
+    }
+
+    public int getParticleCount() { return pool.count(); }
+
+    public void setMaxParticles(int max) { pool.setMaxSize(max); }
+
+    public int getMaxParticles() { return 0; }
+}
