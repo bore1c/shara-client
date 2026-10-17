@@ -1,14 +1,20 @@
 package dev.shara.client.ui.hud;
 
+import com.google.gson.JsonObject;
 import dev.shara.client.SharaClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 public class HudEditorScreen extends Screen {
     private HudElement dragging = null;
     private int dragOffsetX = 0;
     private int dragOffsetY = 0;
+    private final int grid = 8;
 
     public HudEditorScreen() {
         super(Text.literal("HUD Editor"));
@@ -17,9 +23,8 @@ public class HudEditorScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, 0x88090B12);
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal("HUD Editor - drag elements"), width / 2, 20, 0xFFFFFFFF);
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal("HUD Editor - drag elements (snap to grid)"), width / 2, 20, 0xFFFFFFFF);
 
-        // render HUD elements as outlines with names
         for (HudElement he : SharaClient.get().getHudManager().getElements()) {
             int x = he.getX();
             int y = he.getY();
@@ -47,8 +52,13 @@ public class HudEditorScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (dragging != null) {
-            dragging.setX((int)mouseX - dragOffsetX);
-            dragging.setY((int)mouseY - dragOffsetY);
+            int nx = (int)mouseX - dragOffsetX;
+            int ny = (int)mouseY - dragOffsetY;
+            // snap to grid
+            nx = Math.round(nx / (float)grid) * grid;
+            ny = Math.round(ny / (float)grid) * grid;
+            dragging.setX(nx);
+            dragging.setY(ny);
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
@@ -62,5 +72,42 @@ public class HudEditorScreen extends Screen {
             return true;
         }
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    // export and import layout
+    public boolean exportLayout(String name) {
+        try {
+            Path dir = Path.of("config", SharaClient.MOD_ID, "layouts");
+            Files.createDirectories(dir);
+            Path out = dir.resolve(name + ".json");
+            JsonObject root = new JsonObject();
+            for (HudElement he : SharaClient.get().getHudManager().getElements()) {
+                JsonObject j = new JsonObject();
+                j.addProperty("x", he.getX());
+                j.addProperty("y", he.getY());
+                root.add(he.getId(), j);
+            }
+            Files.writeString(out, SharaClient.GSON.toJson(root));
+            return true;
+        } catch (IOException e) { return false; }
+    }
+
+    public boolean importLayout(String name) {
+        try {
+            Path in = Path.of("config", SharaClient.MOD_ID, "layouts", name + ".json");
+            if (!Files.exists(in)) return false;
+            String content = Files.readString(in);
+            JsonObject root = SharaClient.GSON.fromJson(content, JsonObject.class);
+            for (var e : root.entrySet()) {
+                var id = e.getKey();
+                var obj = e.getValue().getAsJsonObject();
+                SharaClient.get().getHudManager().getElements().stream().filter(h -> h.getId().equals(id)).findFirst().ifPresent(h -> {
+                    h.setX(obj.has("x") ? obj.get("x").getAsInt() : h.getX());
+                    h.setY(obj.has("y") ? obj.get("y").getAsInt() : h.getY());
+                });
+            }
+            SharaClient.get().getConfigManager().save();
+            return true;
+        } catch (Exception e) { return false; }
     }
 }

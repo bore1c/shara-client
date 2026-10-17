@@ -1,0 +1,75 @@
+package dev.shara.client.ui.clickgui.component;
+
+import com.google.gson.JsonObject;
+import dev.shara.client.SharaClient;
+import dev.shara.client.module.Module;
+import dev.shara.client.setting.*;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.text.Text;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class SettingsPanel {
+    public int x, y, renderWidth = 160, renderHeight = 120;
+    private Module module;
+    private final List<Object> controls = new ArrayList<>();
+
+    public SettingsPanel(int x, int y, int w, int h) {
+        this.x = x; this.y = y; this.renderWidth = w; this.renderHeight = h;
+    }
+
+    public void setModule(Module m) {
+        this.module = m;
+        controls.clear();
+        if (m == null) return;
+        // For each setting, create suitable control object (very basic mapping)
+        for (Module.SettingEntry e : m.getSettings()) {
+            String key = e.getKey(); Object val = e.getValue();
+            if (val instanceof Boolean) controls.add(new CheckboxControl(x + 8, y + 24 + controls.size() * 22, 16, 16, key, (Boolean) val));
+            else if (val instanceof Number) controls.add(new SliderControl(x + 8, y + 24 + controls.size() * 30, renderWidth - 24, 12, key, 0, 100, ((Number) val).doubleValue()));
+            else if (val instanceof Integer) controls.add(new ColorPickerControl(x + 8, y + 24 + controls.size() * 28, 80, 16, key, (Integer) val));
+            else if (val instanceof String && key.toLowerCase().contains("key")) controls.add(new KeybindControl(x + 8, y + 24 + controls.size() * 28, 80, 16, key, 0));
+        }
+    }
+
+    public void render(DrawContext ctx, Screen screen, float delta) {
+        ctx.fill(x, y, x + renderWidth, y + renderHeight, 0xCC111522);
+        if (module == null) {
+            ctx.drawText(screen.textRenderer, Text.literal("Select a module"), x + 8, y + 8, 0xFFAAAAAA, false);
+            return;
+        }
+        ctx.drawText(screen.textRenderer, Text.literal(module.getName()), x + 8, y + 8, 0xFFFFFFFF, false);
+        int yy = y + 24;
+        for (Object c : controls) {
+            if (c instanceof CheckboxControl cc) { cc.render(ctx, screen); yy += 22; }
+            else if (c instanceof SliderControl sc) { sc.render(ctx, screen); yy += 30; }
+            else if (c instanceof ColorPickerControl cp) { cp.render(ctx, screen); yy += 28; }
+            else if (c instanceof KeybindControl kc) { kc.render(ctx, screen); yy += 28; }
+        }
+    }
+
+    public boolean mouseClicked(double mx, double my, int button) {
+        for (Object c : controls) {
+            if (c instanceof CheckboxControl cc && cc.mouseClicked(mx, my)) return true;
+            if (c instanceof SliderControl sc && sc.mouseClicked(mx, my)) return true;
+            if (c instanceof ColorPickerControl cp && cp.mouseClicked(mx, my)) return true;
+            if (c instanceof KeybindControl kc && kc.mouseClicked(mx, my)) return true;
+        }
+        return false;
+    }
+
+    // basic export of module settings to JSON (placeholder)
+    public JsonObject exportSettings() {
+        JsonObject root = new JsonObject();
+        if (module == null) return root;
+        for (Module.SettingEntry e : module.getSettings()) {
+            Object v = e.getValue();
+            if (v instanceof Boolean) root.addProperty(e.getKey(), (Boolean) v);
+            else if (v instanceof Number) root.addProperty(e.getKey(), ((Number) v).doubleValue());
+            else if (v instanceof String) root.addProperty(e.getKey(), (String) v);
+        }
+        return root;
+    }
+}
