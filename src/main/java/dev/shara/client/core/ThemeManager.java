@@ -1,21 +1,30 @@
 package dev.shara.client.core;
 
-import java.util.HashMap;
+import dev.shara.client.theme.Theme;
+
 import java.util.Map;
 import java.util.Optional;
 
 public class ThemeManager {
-    private final Map<String, Object> themes = new HashMap<>();
+    private final ThemeManagerV2 delegate = new ThemeManagerV2();
 
-    public void registerTheme(String id, Object theme) {
-        themes.put(id, theme);
+    public void registerTheme(Theme theme) {
+        delegate.registerTheme(theme);
     }
 
-    public Optional<Object> getTheme(String id) {
-        return Optional.ofNullable(themes.get(id));
+    public Optional<Theme> getTheme(String id) {
+        return delegate.getTheme(id);
     }
 
-    public Map<String, Object> getThemes() {
-        return themes;
+    public Map<String, Theme> getThemes() {
+        return delegate.getThemes();
+    }
+
+    public Theme getActiveTheme() {
+        return delegate.getActiveTheme();
+    }
+
+    public void setActiveTheme(String id) {
+        delegate.setActiveTheme(id);
     }
 }

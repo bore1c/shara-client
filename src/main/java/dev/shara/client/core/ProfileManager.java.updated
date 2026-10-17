@@ -1,0 +1,51 @@
+package dev.shara.client.core;
+
+import com.google.gson.JsonObject;
+import dev.shara.client.SharaClient;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ProfileManager {
+    private final Path profilesDir = Path.of("config", SharaClient.MOD_ID, "profiles");
+
+    public ProfileManager() {
+        try { Files.createDirectories(profilesDir); } catch (IOException ignored) {}
+    }
+
+    public List<String> listProfiles() {
+        List<String> out = new ArrayList<>();
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(profilesDir, "*.json")) {
+            for (Path p : ds) out.add(p.getFileName().toString().replaceFirst("\\.json$", ""));
+        } catch (IOException ignored) {}
+        return out;
+    }
+
+    public boolean saveProfile(String name) {
+        try {
+            Path target = profilesDir.resolve(name + ".json");
+            // copy current config
+            Path cfg = Path.of("config", SharaClient.MOD_ID, "config.json");
+            if (!Files.exists(cfg)) SharaClient.get().getConfigManager().save();
+            Files.copy(cfg, target, StandardCopyOption.REPLACE_EXISTING);
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
+    public boolean loadProfile(String name) {
+        try {
+            Path source = profilesDir.resolve(name + ".json");
+            Path cfg = Path.of("config", SharaClient.MOD_ID, "config.json");
+            if (!Files.exists(source)) return false;
+            Files.copy(source, cfg, StandardCopyOption.REPLACE_EXISTING);
+            SharaClient.get().getConfigManager().load();
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
+    public boolean deleteProfile(String name) {
+        try { return Files.deleteIfExists(profilesDir.resolve(name + ".json")); } catch (Exception e) { return false; }
+    }
+}
